@@ -145,31 +145,46 @@
                         `}>
                     <Text as="div"
                         variant="muted"
-                        className="flex items-center justify-end">
-                        {operation}
+                        className="flex items-center justify-end h-7">
+                        {result && operation}
                     </Text>
-                    <div className={`flex items-center justify-between`}>
+                    <div className={`flex items-center justify-between h-9`}>
                         <Text variant="muted">=</Text>
-                        <Text variant="blast">{result}</Text>
+                        <Text variant="blast">{result || operation}</Text>
                     </div>
                 </div>
             )
         }
 
         function Calculator() {
+
+            // Mostrando operação e resultado no display da calculadora. Começamos criando um estado para a operação e ajustando a exibição dos resultados.
+            const [operation, setOperation] = React.useState('')
+            const [result, setResult] = React.useState('')
+
+            function handleInputClick(input) {
+                if (input === "=") {
+                    const operationResult = eval(operation)
+                    setResult(operationResult)
+                    return;
+                }
+
+                setOperation(`${operation} ${input}`)
+            }
+
             return (
                 <Card className={`
                     flex flex-col gap-[1.625rem] w-[22.25rem]
                     pt-14 px-8 pb-8
                     `}>
-                    <CalculatorDisplay operation="1+1" result="2" />
+                    <CalculatorDisplay operation={operation} result={result} />
 
                     <div className="flex flex-col gap-3">
                         {buttons.map((row, index) => (
                             <div key={`row-${index}`} className="flex gap-3" >
                                 {row.map(button => (
-                                    <Button key="{button.input}" className="w-16 h-16">
-                                        CE
+                                    <Button key={button.input} className={button.className || "w-16 h-16"} variant={button.variant} onClick={() => handleInputClick(button.input)}>
+                                        {button.input}
                                     </Button>
                                 ))}
                             </div>
