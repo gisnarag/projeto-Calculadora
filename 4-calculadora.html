@@ -163,13 +163,46 @@
             const [result, setResult] = React.useState('')
 
             function handleInputClick(input) {
-                if (input === "=") {
-                    const operationResult = eval(operation)
-                    setResult(operationResult)
+
+                // Apagar a operação e resultado ao clicar no "C"
+                if (input === "C") {
+                    setOperation("");
+                    setResult("");
                     return;
                 }
 
-                setOperation(`${operation} ${input}`)
+                // slice(início, fim) -> cria uma nova string (ou array) pegando apenas um pedaço do original. 0 → começa do início, negativo → corta contando do final.  
+                if (input === "CE") {
+                    setResult("");
+                    setOperation(operation.slice(0, -2))
+                    return;
+                }
+
+                // Fazer cálculo ao clicar em "="
+                if (input === "=") {
+                    const operationResult = eval(operation.replace(/,/g, '.'));
+                    // .toString() é necessário porque o result do eval retorna number e o replace só funciona com string. O ?. é o operador de encadeamento opcional (optional chaining).
+                    // Ele serve para acessar algo só se existir, ou seja, só executa o replace se o valor antes existir (não for null nem undefined) e evita erro.
+                    const parsedResult = operationResult.toString()?.replace(/\./g, ',')
+                    setResult(parsedResult)
+                    return;
+                }
+
+                // ERRO AQUI
+                if (result) {
+                    setOperation(isNaN(input)
+                        ? `${result}$${input === "," ? "" : " "}${input}`
+                        : input)
+                    setResult("");
+                    return;
+                }
+
+                if (input === "," && !operation.endsWith(',')) {
+                    setOperation(`${operation},`)
+                    return;
+                }
+
+                setOperation(`${operation}${operation.endsWith(',') ? "" : " "}${input}`)
             }
 
             return (
