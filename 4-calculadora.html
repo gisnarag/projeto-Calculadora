@@ -148,8 +148,30 @@
             // Quando esse componente renderizar pela primeira vez, history começa como um array vazio. history = []
             const [history, setHistory] = React.useState([])
 
+            // Armazenar o histórico no localStorage do localhost
+            const historyStorageKey = 'history';
+
+            // Exibir o histórico do localStorage apenas quando o componente for montado
+            React.useEffect(() => {
+                const savedHistory = localStorage.getItem(historyStorageKey)
+
+                // É preciso usar a condição pois caso não haja histórico no localStorage, a renderização do history fica com array vazio.
+                // JSON.parse converte uma string JSON em um valor JavaScript real.
+                // O localStorage só armazena strings. Quando você salva um array ou objeto, precisa usar JSON.stringify. Para usar de novo como array ou objeto JS → precisa converter de volta com JSON.parse.
+                setHistory(JSON.parse(savedHistory) || '[]')
+
+            }, [])
+
             function updateHistory(operation, parsedResult) {
-                setHistory((prev) => [...prev, `${operation}=${parsedResult}`])
+                setHistory((prev) => {
+                    const updatedHistory = [...prev, `${operation}=${parsedResult}`];
+
+                    // localStorage.setItem("key", JSON.stringify(array))
+                    localStorage.setItem(historyStorageKey, JSON.stringify(updatedHistory))
+
+                    // Exibir na tela 
+                    return updatedHistory;
+                })
             }
 
             return (
@@ -159,33 +181,15 @@
             )
         }
 
-        function CalculatorDisplay({ operation, result }) {
-            return (
-                <div className={`
-                        flex flex-col gap-2 px-[1.375rem]
-                        cursor-default select-none
-                        `}>
-                    <Text as="div"
-                        variant="muted"
-                        className="flex items-center justify-end h-7">
-                        {result && operation}
-                    </Text>
-                    <div className={`flex items-center justify-between h-9`}>
-                        <Text variant="muted">=</Text>
-                        <Text variant="blast">{result || operation}</Text>
-                    </div>
-                </div>
-            )
-        }
-
-        function Calculator() {
+        // Criação do Hook Customizado 
+        function useCalculator() {
 
             // Mostrando operação e resultado no display da calculadora. Começamos criando um estado para a operação e ajustando a exibição dos resultados.
             const [operation, setOperation] = React.useState('')
             const [result, setResult] = React.useState('')
             const { updateHistory } = React.useContext(CalculatorContext)
 
-            function handleInputClick(input) {
+            function doOperation(input) {
 
                 // Apagar a operação e resultado ao clicar no "C"
                 if (input === "C") {
@@ -228,6 +232,37 @@
                 }
 
                 setOperation(`${operation}${input}`)
+            }
+
+            // Por boas práticas é melhor que o retorno seja objeto
+            return { operation, result, doOperation }
+        }
+
+        function CalculatorDisplay({ operation, result }) {
+            return (
+                <div className={`
+                        flex flex-col gap-2 px-[1.375rem]
+                        cursor-default select-none
+                        `}>
+                    <Text as="div"
+                        variant="muted"
+                        className="flex items-center justify-end h-7">
+                        {result && operation}
+                    </Text>
+                    <div className={`flex items-center justify-between h-9`}>
+                        <Text variant="muted">=</Text>
+                        <Text variant="blast">{result || operation}</Text>
+                    </div>
+                </div>
+            )
+        }
+
+        function Calculator() {
+
+            const { operation, result, doOperation } = useCalculator()
+
+            function handleInputClick(input) {
+                doOperation(input);
             }
 
             return (
