@@ -137,6 +137,28 @@
             ]
         ]
 
+        // Contexto criado 
+        const CalculatorContext = React.createContext();
+
+        // Criação do provedor
+        function CalculatorProvider({ children }) {
+
+            // Criar o histórico
+            // O parâmetro do useState é o valor inicial do estado.
+            // Quando esse componente renderizar pela primeira vez, history começa como um array vazio. history = []
+            const [history, setHistory] = React.useState([])
+
+            function updateHistory(operation, parsedResult) {
+                setHistory((prev) => [...prev, `${operation}=${parsedResult}`])
+            }
+
+            return (
+                <CalculatorContext.Provider value={{ history, updateHistory }}>
+                    {children}
+                </CalculatorContext.Provider>
+            )
+        }
+
         function CalculatorDisplay({ operation, result }) {
             return (
                 <div className={`
@@ -161,6 +183,7 @@
             // Mostrando operação e resultado no display da calculadora. Começamos criando um estado para a operação e ajustando a exibição dos resultados.
             const [operation, setOperation] = React.useState('')
             const [result, setResult] = React.useState('')
+            const { updateHistory } = React.useContext(CalculatorContext)
 
             function handleInputClick(input) {
 
@@ -174,7 +197,7 @@
                 // slice(início, fim) -> cria uma nova string (ou array) pegando apenas um pedaço do original. 0 → começa do início, negativo → corta contando do final.  
                 if (input === "CE") {
                     setResult("");
-                    setOperation(operation.slice(0, -2))
+                    setOperation(operation.slice(0, -1))
                     return;
                 }
 
@@ -185,13 +208,15 @@
                     // Ele serve para acessar algo só se existir, ou seja, só executa o replace se o valor antes existir (não for null nem undefined) e evita erro.
                     const parsedResult = operationResult.toString()?.replace(/\./g, ',')
                     setResult(parsedResult)
+                    updateHistory(operation, parsedResult)
                     return;
                 }
 
-                // ERRO AQUI
+                // Se existir o resultado
                 if (result) {
+                    // NaN -> Isso não pode virar número?
                     setOperation(isNaN(input)
-                        ? `${result}$${input === "," ? "" : " "}${input}`
+                        ? `${result}${input}`
                         : input)
                     setResult("");
                     return;
@@ -202,7 +227,7 @@
                     return;
                 }
 
-                setOperation(`${operation}${operation.endsWith(',') ? "" : " "}${input}`)
+                setOperation(`${operation}${input}`)
             }
 
             return (
@@ -228,17 +253,24 @@
         }
 
         function OperationHistory() {
+
+            const { history } = React.useContext(CalculatorContext)
+
             return (
                 <Card className="w-full py-10 px-8">
                     <Text as="h1" variant="heading" className="mb-4">
                         Histórico de Operações
                     </Text>
 
-                    <ul className="flex flex-col gap-3">
-                        <Text as="li">1 + 1 = 2</Text>
-                        <Text as="li">2 + 3 + 1 = 6</Text>
-                        <Text as="li">2 + 3 = 5</Text>
-                    </ul>
+                    {history.length > 0 ?
+
+                        (
+                            <ul className="flex flex-col gap-3">
+                                {history.map((value, index) => <Text key={`item-${index}`} as="li" >{value}</Text>)}
+                            </ul>
+                        )
+                        : (<Text as="p" variant="muted">Nenhuma operação recente.</Text>)
+                    }
                 </Card>
             )
         }
@@ -251,8 +283,10 @@
                     items-center sm:items-stretch
                     gap-2
                     `}>
-                    <Calculator />
-                    <OperationHistory />
+                    <CalculatorProvider>
+                        <Calculator />
+                        <OperationHistory />
+                    </CalculatorProvider>
                 </main>
             )
         }
